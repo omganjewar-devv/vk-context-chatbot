@@ -93,7 +93,7 @@ Atlas implements two complementary strategies:
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/<your-github-username>/VK_internship.git
 cd VK_internship
 
 # Create and activate virtual environment
@@ -299,6 +299,7 @@ VK_internship/
 
 ---
 
+
 ## 👨‍💻 Author
 Prepared for **VK Internship Submission & Technical Evaluation**.
-See [INTERVIEW_PREP.md](INTERVIEW_PREP.md) for detailed interview preparation notes!
+
