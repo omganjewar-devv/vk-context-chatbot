@@ -1,0 +1,110 @@
+/* Custom scrollbar */
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.6);
+  border-radius: 9999px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.9);
+}
+
+/* Chat bubble styling */
+.user-bubble {
+  background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+  border-bottom-right-radius: 4px;
+}
+
+.assistant-bubble {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  border-bottom-left-radius: 4px;
+}
+
+/* Markdown typography inside assistant messages */
+.prose-chat {
+  font-size: 0.925rem;
+  line-height: 1.625;
+}
+
+.prose-chat p {
+  margin-bottom: 0.75rem;
+}
+.prose-chat p:last-child {
+  margin-bottom: 0;
+}
+
+.prose-chat h1, .prose-chat h2, .prose-chat h3 {
+  font-weight: 700;
+  color: #f8fafc;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose-chat ul, .prose-chat ol {
+  margin-left: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose-chat ul {
+  list-style-type: disc;
+}
+
+.prose-chat ol {
+  list-style-type: decimal;
+}
+
+.prose-chat li {
+  margin-bottom: 0.25rem;
+}
+
+.prose-chat code {
+  background-color: rgba(15, 23, 42, 0.8);
+  color: #38bdf8;
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85em;
+}
+
+.prose-chat pre {
+  background-color: #0f172a !important;
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose-chat pre code {
+  background-color: transparent !important;
+  color: #e2e8f0;
+  padding: 0;
+  font-size: 0.825rem;
+}
+
+.prose-chat blockquote {
+  border-left: 3px solid #6366f1;
+  padding-left: 0.75rem;
+  margin-left: 0;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.message-animate {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

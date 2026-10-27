@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atlas | Context-Aware Multi-Turn AI Assistant</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Marked.js for Markdown parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Highlight.js for code syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased overflow-hidden">
+
+  <!-- Top App Navigation Bar -->
+  <header class="h-14 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md flex items-center justify-between px-4 z-20">
+    <div class="flex items-center space-x-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+        <i class="fa-solid fa-brain text-white text-sm"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="font-bold text-sm tracking-wide text-white" id="header-bot-name">Atlas</span>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-medium" id="header-bot-badge">Senior Architect</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center Strategy Selector / Status -->
+    <div class="hidden md:flex items-center space-x-2 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700/60 text-xs">
+      <span class="text-slate-400">Context Strategy:</span>
+      <select id="strategy-selector" class="bg-slate-900 text-cyan-400 font-medium rounded px-2 py-0.5 border border-slate-700 focus:outline-none focus:border-cyan-500 cursor-pointer">
+        <option value="truncation">Sliding Window (Last 6)</option>
+        <option value="summarization">Running Summarization</option>
+      </select>
+    </div>
+
+    <!-- Right Controls -->
+    <div class="flex items-center space-x-3">
+      <div id="provider-badge" class="text-xs px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700 flex items-center space-x-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="provider-name">Gemini 2.5 Flash</span>
+      </div>
+
+      <button id="toggle-inspector-btn" title="Toggle Context Window Inspector" class="text-xs px-3 py-1.5 rounded-md bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 border border-indigo-500/30 transition flex items-center space-x-1.5">
+        <i class="fa-solid fa-layer-group"></i>
+        <span>Context Inspector</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Body Grid: Sidebar | Chat Container | Context Inspector -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- Left Sidebar: Conversations & Settings -->
+    <aside class="w-64 border-r border-slate-800 bg-slate-900/60 backdrop-blur flex flex-col shrink-0 hidden md:flex">
+      <!-- New Chat Button -->
+      <div class="p-3 border-b border-slate-800">
+        <button id="new-chat-btn" class="w-full flex items-center justify-center space-x-2 py-2 px-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white rounded-lg text-sm font-medium transition shadow-md shadow-indigo-600/20">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>New Conversation</span>
+        </button>
+      </div>
+
+      <!-- Conversation List -->
+      <div class="flex-1 overflow-y-auto p-2 space-y-1 custom-scroll" id="conversation-list">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Quick Metrics Footer -->
+      <div class="p-3 border-t border-slate-800/80 bg-slate-900/90 text-xs text-slate-400 space-y-1">
+        <div class="flex justify-between">
+          <span>Active Sessions:</span>
+          <span id="stat-sessions-count" class="font-mono text-slate-200">1</span>
+        </div>
+        <div class="flex justify-between">
+          <span>Current Session turns:</span>
+          <span id="stat-current-turns" class="font-mono text-cyan-400">0</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center: Chat Feed & Input -->
+    <main class="flex-1 flex flex-col bg-slate-950 relative overflow-hidden">
+      
+      <!-- API Missing Warning Banner (dismissible or shown if mock) -->
+      <div id="api-status-banner" class="hidden bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 text-xs text-amber-300 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
+          <span id="api-status-message">Running in Simulation Mode. Add GEMINI_API_KEY to .env for live cloud inference.</span>
+        </div>
+        <a href="https://aistudio.google.com/" target="_blank" class="underline hover:text-amber-200 text-xs">Get Free Key</a>
+      </div>
+
+      <!-- Messages Stream -->
+      <div id="messages-container" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scroll">
+        <!-- Dynamic Chat Messages will be inserted here -->
+      </div>
+
+      <!-- Typing Indicator -->
+      <div id="typing-indicator" class="hidden px-6 py-2 flex items-center space-x-2 text-xs text-indigo-400">
+        <div class="flex space-x-1">
+          <div class="w-2 h-2 rounded-full bg-indigo-500 animate-bounce"></div>
+          <div class="w-2 h-2 rounded-full bg-indigo-500 animate-bounce [animation-delay:-0.15s]"></div>
+          <div class="w-2 h-2 rounded-full bg-indigo-500 animate-bounce [animation-delay:-0.3s]"></div>
+        </div>
+        <span>Atlas is reasoning over context...</span>
+      </div>
+
+      <!-- Suggested Starter Prompts -->
+      <div id="suggested-prompts" class="px-6 py-2 flex flex-wrap gap-2 text-xs">
+        <button class="prompt-chip bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-full border border-slate-700/60 transition" data-text="Hi Atlas! I'm Om, an intern developing a scalable microservices architecture in Python.">
+          👋 1. Introduce project context
+        </button>
+        <button class="prompt-chip bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-full border border-slate-700/60 transition" data-text="We expect 20,000 requests per second and require low-latency distributed caching.">
+          ⚙️ 2. Add traffic constraints
+        </button>
+        <button class="prompt-chip bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-full border border-slate-700/60 transition" data-text="What was my name and the throughput requirement I mentioned earlier?">
+          🧠 3. Test multi-turn recall
+        </button>
+      </div>
+
+      <!-- Input Bar -->
+      <div class="p-3 sm:p-4 bg-slate-900/70 border-t border-slate-800 backdrop-blur-md">
+        <form id="chat-form" class="flex items-end space-x-2 max-w-4xl mx-auto">
+          <div class="flex-1 relative">
+            <textarea
+              id="user-input"
+              rows="1"
+              placeholder="Ask Atlas about architecture, code, or continue the discussion (Shift+Enter for new line)..."
+              class="w-full bg-slate-800/90 text-slate-100 placeholder-slate-400 text-sm rounded-xl px-4 py-3 border border-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none max-h-36 custom-scroll"
+            ></textarea>
+          </div>
+          <button
+            type="submit"
+            id="send-btn"
+            class="h-11 px-5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-medium text-sm transition flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/30 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+            <span class="hidden sm:inline">Send</span>
+          </button>
+        </form>
+      </div>
+    </main>
+
+    <!-- Right Drawer: Context Window Inspector (Interview Super-Feature) -->
+    <aside id="context-inspector-drawer" class="w-80 border-l border-slate-800 bg-slate-900/95 backdrop-blur flex flex-col shrink-0 transition-all duration-300 ease-in-out hidden lg:flex">
+      <div class="p-3 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-sliders text-cyan-400 text-xs"></i>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Context Window Inspector</h2>
+        </div>
+        <span class="text-[10px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20">Live</span>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-3 space-y-4 text-xs custom-scroll">
+        <!-- Metric Grid -->
+        <div class="grid grid-cols-2 gap-2">
+          <div class="p-2.5 bg-slate-800/70 rounded-lg border border-slate-700/60">
+            <div class="text-[10px] text-slate-400 uppercase">Total Turns</div>
+            <div id="inspector-total-turns" class="text-base font-bold text-white font-mono mt-0.5">0</div>
+          </div>
+          <div class="p-2.5 bg-slate-800/70 rounded-lg border border-slate-700/60">
+            <div class="text-[10px] text-slate-400 uppercase">In Active Window</div>
+            <div id="inspector-active-turns" class="text-base font-bold text-indigo-400 font-mono mt-0.5">0</div>
+          </div>
+          <div class="p-2.5 bg-slate-800/70 rounded-lg border border-slate-700/60">
+            <div class="text-[10px] text-slate-400 uppercase">Pruned Messages</div>
+            <div id="inspector-pruned-turns" class="text-base font-bold text-amber-400 font-mono mt-0.5">0</div>
+          </div>
+          <div class="p-2.5 bg-slate-800/70 rounded-lg border border-slate-700/60">
+            <div class="text-[10px] text-slate-400 uppercase">Est. Tokens</div>
+            <div id="inspector-est-tokens" class="text-base font-bold text-emerald-400 font-mono mt-0.5">0</div>
+          </div>
+        </div>
+
+        <!-- Strategy Details -->
+        <div class="p-3 bg-slate-800/40 rounded-lg border border-slate-800 space-y-1.5">
+          <div class="flex justify-between items-center">
+            <span class="text-slate-400 font-medium">Active Strategy:</span>
+            <span id="inspector-strategy-name" class="font-bold text-cyan-300">Sliding Window</span>
+          </div>
+          <p id="inspector-strategy-desc" class="text-[11px] text-slate-400 leading-relaxed">
+            Only the last 6 messages are forwarded to the model. Older turns are pruned to cap token consumption.
+          </p>
+        </div>
+
+        <!-- Running Summary Block (Summarization Mode) -->
+        <div id="inspector-summary-section" class="hidden space-y-1.5">
+          <div class="flex items-center justify-between text-slate-300 font-medium">
+            <span class="flex items-center space-x-1.5">
+              <i class="fa-solid fa-compress text-indigo-400"></i>
+              <span>Running Context Summary</span>
+            </span>
+            <span class="text-[10px] text-slate-400 font-mono" id="inspector-summary-len">0 chars</span>
+          </div>
+          <div id="inspector-summary-content" class="p-2.5 bg-slate-950/80 rounded border border-indigo-500/20 text-slate-300 text-[11px] font-mono whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">
+            (No summary generated yet)
+          </div>
+        </div>
+
+        <!-- System Prompt Preview -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between text-slate-300 font-medium">
+            <span class="flex items-center space-x-1.5">
+              <i class="fa-solid fa-user-shield text-slate-400"></i>
+              <span>System Persona</span>
+            </span>
+          </div>
+          <div id="inspector-system-prompt" class="p-2.5 bg-slate-950/80 rounded border border-slate-800 text-slate-400 text-[11px] font-mono max-h-36 overflow-y-auto leading-relaxed">
+            Loading persona...
+          </div>
+        </div>
+
+        <!-- Interview Explainer Box -->
+        <div class="p-3 bg-indigo-950/30 rounded-lg border border-indigo-500/20 text-slate-300 space-y-1">
+          <div class="font-semibold text-indigo-300 flex items-center space-x-1">
+            <i class="fa-solid fa-lightbulb text-amber-400"></i>
+            <span>Why Context Windowing?</span>
+          </div>
+          <p class="text-[11px] text-slate-400 leading-relaxed">
+            LLMs have finite context limits & pay-per-token pricing. Unbounded history causes exponential latency & $O(N^2)$ attention costs. Truncation and summarization bound context while preserving semantic continuity.
+          </p>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
