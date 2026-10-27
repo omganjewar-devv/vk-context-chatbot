@@ -4,7 +4,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-12%20passed-brightgreen.svg)]()
+![Tests](https://img.shields.io/badge/tests-12%20passed-brightgreen.svg)
 
 > A production-grade multi-turn conversational AI engine backed by real LLM APIs (**Google Gemini** & **OpenAI**) with active **Context Window Management**, **Sliding-Window Truncation**, **Running Summarization**, and a glassmorphic **Live Context Inspector**.
 
@@ -29,34 +29,37 @@
 
 ```mermaid
 flowchart TD
-    UserClient[Web UI / Terminal CLI] -->|POST /api/chat {message, session_id}| Server[FastAPI Application]
-    Server --> Manager[ConversationManager]
+    UserClient["Web UI / Terminal CLI"] -->|"POST /api/chat"| Server["FastAPI Application"]
+    Server --> Manager["ConversationManager"]
     
     subgraph MemoryLayer ["Multi-Turn Memory Engine"]
-        Manager --> Session[ConversationSession]
-        Session --> AuditHistory[(Complete Turn History)]
+        Manager --> Session["ConversationSession"]
+        Session --> AuditHistory[("Complete Turn History")]
         
-        Session --> StrategyCheck{Context Strategy}
-        StrategyCheck -->|Truncation| SlidingWindow[Keep Last N Messages]
-        StrategyCheck -->|Summarization| Summarizer[Fold Older Turns into Running Summary]
+        Session --> StrategyCheck{"Context Strategy"}
+        StrategyCheck -->|"Truncation"| SlidingWindow["Keep Last N Messages"]
+        StrategyCheck -->|"Summarization"| Summarizer["Fold Older Turns into Running Summary"]
         
-        SlidingWindow --> PayloadAssembler[Context Window Payload]
+        SlidingWindow --> PayloadAssembler["Context Window Payload"]
         Summarizer --> PayloadAssembler
         
-        PayloadAssembler --> PersonaEngine[Inject Atlas System Persona]
+        PayloadAssembler --> PersonaEngine["Inject Atlas System Persona"]
     end
     
-    MemoryLayer -->|Bounded Context + Persona| LLMClient[Unified LLM Client]
+    PersonaEngine -->|"Bounded Context + Persona"| LLMClient["Unified LLM Client"]
     
     subgraph CloudAPIs ["LLM Providers"]
-        LLMClient -->|google-genai SDK| Gemini[Gemini 2.5 Flash]
-        LLMClient -->|openai SDK| OpenAI[GPT-4o-mini]
-        LLMClient -->|Zero Key Fallback| Mock[Offline Simulation Mode]
+        LLMClient -->|"google-genai SDK"| Gemini["Gemini 2.5 Flash"]
+        LLMClient -->|"openai SDK"| OpenAI["GPT-4o-mini"]
+        LLMClient -->|"Zero Key Fallback"| Mock["Offline Simulation Mode"]
     end
     
-    CloudAPIs -->|Generated Response| SafeHandler[Error Handling & Sanitizer]
-    SafeHandler --> SessionUpdate[Store Assistant Reply & Context Metrics]
-    SessionUpdate --> ResponsePayload[JSON Response + Live Metadata]
+    Gemini --> SafeHandler["Error Handling & Sanitizer"]
+    OpenAI --> SafeHandler
+    Mock --> SafeHandler
+    
+    SafeHandler --> SessionUpdate["Store Assistant Reply & Context Metrics"]
+    SessionUpdate --> ResponsePayload["JSON Response + Live Metadata"]
     ResponsePayload --> UserClient
 ```
 
@@ -93,8 +96,8 @@ Atlas implements two complementary strategies:
 
 ```bash
 # Clone the repository
-git clone https://github.com/<your-github-username>/VK_internship.git
-cd VK_internship
+git clone https://github.com/omganjewar-devv/vk-context-chatbot.git
+cd vk-context-chatbot
 
 # Create and activate virtual environment
 python3 -m venv venv

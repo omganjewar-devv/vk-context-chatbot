@@ -9,39 +9,42 @@
 
 ```mermaid
 flowchart TD
-    User([User / Web UI / CLI]) -->|POST /api/chat {message, session_id}| API[FastAPI Router]
-    API --> CM[ConversationManager]
+    UserClient["User / Web UI / CLI"] -->|"POST /api/chat"| API["FastAPI Router"]
+    API --> CM["ConversationManager"]
     
     subgraph ContextEngine ["Context Window Engine"]
-        CM -->|Lookup / Create| CS[ConversationSession]
-        CS -->|Append Message| Hist[(Session History Store)]
+        CM --> CS["ConversationSession"]
+        CS --> Hist[("Session History Store")]
         
-        CS -->|Check Strategy| Strat{Active Strategy?}
-        Strat -->|Truncation| SW[Sliding Window Engine]
-        SW -->|Keep Last N Messages| Payload[Construct Context Payload]
+        CS --> Strat{"Active Strategy?"}
+        Strat -->|"Truncation"| SW["Sliding Window Engine"]
+        SW --> Payload["Construct Context Payload"]
         
-        Strat -->|Summarization| SR[Running Summarizer]
-        SR -->|Threshold Exceeded?| GenSum[Generate / Update Running Summary]
+        Strat -->|"Summarization"| SR["Running Summarizer"]
+        SR --> GenSum["Generate / Update Running Summary"]
         GenSum --> Payload
         
-        Payload --> SP[Inject System Persona & Constraints]
+        Payload --> SP["Inject System Persona & Constraints"]
     end
     
-    ContextEngine -->|Formatted Context + System Prompt| UnifiedClient[Unified LLM Client]
+    SP -->|"Formatted Context + System Prompt"| UnifiedClient["Unified LLM Client"]
     
     subgraph Providers ["LLM Providers"]
-        UnifiedClient -->|Google GenAI SDK| Gemini[Gemini 2.5 Flash]
-        UnifiedClient -->|OpenAI SDK| OpenAI[GPT-4o-mini]
-        UnifiedClient -->|Fallback / Demo| Mock[Mock Simulation Client]
+        UnifiedClient -->|"Google GenAI SDK"| Gemini["Gemini 2.5 Flash"]
+        UnifiedClient -->|"OpenAI SDK"| OpenAI["GPT-4o-mini"]
+        UnifiedClient -->|"Fallback / Demo"| Mock["Mock Simulation Client"]
     end
     
-    Providers -->|Response Stream / String| ErrHandling{Error Handling}
-    ErrHandling -->|Success| SaveAssistant[Append Assistant Reply to History]
-    ErrHandling -->|429 / Timeout / 401| SafeError[Graceful Fallback Alert]
+    Gemini --> ErrHandling{"Error Handling"}
+    OpenAI --> ErrHandling
+    Mock --> ErrHandling
     
-    SaveAssistant --> Meta[Package Context Metadata\nTokens, Pruned Count, Summary]
+    ErrHandling -->|"Success"| SaveAssistant["Append Assistant Reply to History"]
+    ErrHandling -->|"429 / Timeout / 401"| SafeError["Graceful Fallback Alert"]
+    
+    SaveAssistant --> Meta["Package Context Metadata: Tokens, Pruned Count, Summary"]
     SafeError --> Meta
-    Meta -->|HTTP 200 JSON Response| User
+    Meta -->|"HTTP 200 JSON Response"| UserClient
 ```
 
 ---
